@@ -5,20 +5,34 @@ import time
 import random
 import copy
 
+#window settings
 WIDTH = 1000
 HIGHT = 1000
 FPS = 30
 
+#neural network settings
 FIRST_LAYER_SIZE = 25
 DEEP_LAYERS = 4
 DEEP_LAYER_SIZE = 30
 LAST_LAYER_SIZE = 10
 
+AXON_MIN = 0
+AXON_MAX = 4
+OUTPUT_LEVEL_MIN = -0.25  # actually it's LAYER_SIZE * OUTPUT_LEVEL_MIN
+OUTPUT_LEVEL_MAX = 0.25   # and this is LAYER_SIZE * OUTPUT_LEVEL_MAX
+
+
+#gui settings
+NEURON_RADIUS = 10
 MARGIN = 100
-HSPACE = int((WIDTH - MARGIN*2) / (DEEP_LAYERS + 1))
-FIRST_VSPACE = int((HIGHT - MARGIN*4) / FIRST_LAYER_SIZE+2)
-DEEP_VSPACE = int((HIGHT - MARGIN*2) / DEEP_LAYER_SIZE)
-LAST_VSPACE = int((HIGHT - MARGIN*2) / LAST_LAYER_SIZE)
+def calcSettings():
+    global HSPACE, FIRST_VSPACE, DEEP_VSPACE, LAST_VSPACE
+    HSPACE = int((WIDTH - MARGIN*2) / (DEEP_LAYERS + 1))
+    FIRST_VSPACE = int((HIGHT - MARGIN*4) / FIRST_LAYER_SIZE+2)
+    DEEP_VSPACE = int((HIGHT - MARGIN*2) / DEEP_LAYER_SIZE)
+    LAST_VSPACE = int((HIGHT - MARGIN*2) / LAST_LAYER_SIZE)
+
+calcSettings()
 
 network = []
 
@@ -38,7 +52,6 @@ class Neuron:
         activation_sum = 0
         for input, mask in zip(inputs, self.input_mask):
             activation_sum += input * mask
-        print(f"activation_sum = {activation_sum}")
         if activation_sum >= self.activation_level:
             self.output = self.output_level
         else:
@@ -60,8 +73,10 @@ def buildNetwork():
             for n in range(LAST_LAYER_SIZE):
                 network[-1].append(Neuron())
                 for i in range(DEEP_LAYER_SIZE):
-                    network[-1][-1].input_mask.append(random.getrandbits(1))
+                    network[-1][-1].input_mask.append(not bool(random.randint(AXON_MIN, AXON_MAX)))
                     network[-1][-1].activation_level = random.randint(1, DEEP_LAYER_SIZE)
+                    network[-1][-1].output_level = random.randint(
+                        int(DEEP_LAYER_SIZE * OUTPUT_LEVEL_MIN), int(DEEP_LAYER_SIZE * OUTPUT_LEVEL_MAX))
         else:
             #create deep layers
             network.append([])
@@ -70,12 +85,17 @@ def buildNetwork():
                 #generate neuron's mask
                 if len(network[l]) == 0:
                     for i in range(FIRST_LAYER_SIZE):
-                        network[l][-1].input_mask.append(random.getrandbits(1))
+                        network[l][-1].input_mask.append(not bool(random.randint(AXON_MIN, AXON_MAX)))
                         network[l][-1].activation_level = random.randint(1, FIRST_LAYER_SIZE)
+                        network[l][-1].output_level = random.randint(int(
+                            FIRST_LAYER_SIZE * OUTPUT_LEVEL_MIN), int(FIRST_LAYER_SIZE * OUTPUT_LEVEL_MAX))
                 else:
                     for i in range(DEEP_LAYER_SIZE):
-                        network[l][-1].input_mask.append(random.getrandbits(1))
+                        network[l][-1].input_mask.append(not bool(random.randint(AXON_MIN, AXON_MAX)))
                         network[l][-1].activation_level = random.randint(1, DEEP_LAYER_SIZE)
+                        network[l][-1].output_level = random.randint(
+                            int(DEEP_LAYER_SIZE * OUTPUT_LEVEL_MIN), int(DEEP_LAYER_SIZE * OUTPUT_LEVEL_MAX))
+
 
 
 
@@ -104,38 +124,23 @@ def disp(all = False):
             if l == 1 and l <= DEEP_LAYERS:
                 for n in range(DEEP_LAYER_SIZE):
                     for i in range(FIRST_LAYER_SIZE):
-                        if network[l][n].input_mask[i] > 0:
+                        if network[l][n].input_mask[i] != 0:
                             pygame.draw.line(surface, (255, 255, 255), neuronPos(l, n), neuronPos(l-1, i))
             if l > 1 and l <= DEEP_LAYERS:
                 for n in range(DEEP_LAYER_SIZE):
                     for i in range(DEEP_LAYER_SIZE):
-                        if network[l][n].input_mask[i] > 0:
+                        if network[l][n].input_mask[i] != 0:
                             pygame.draw.line(surface, (255, 255, 255), neuronPos(l, n), neuronPos(l-1, i))
             if l == DEEP_LAYERS+1:
                 for n in range(LAST_LAYER_SIZE):
                     for i in range(DEEP_LAYER_SIZE):
-                        if network[l][n].input_mask[i] > 0:
+                        if network[l][n].input_mask[i] != 0:
                             pygame.draw.line(surface, (255, 255, 255), neuronPos(l, n), neuronPos(l-1, i))
-
-
-
 
     #show neurons
     for l in range(DEEP_LAYERS+2):
-        #first layer
-        if l == 0:
-            for n in range(FIRST_LAYER_SIZE):
-                pygame.draw.circle(surface, (0, 255, 0) if network[0][n].output==network[0][n].output_level else (255, 0, 0), neuronPos(0, n), 10)
-        #last layers
-        elif l == DEEP_LAYERS + 1:
-            for n in range(LAST_LAYER_SIZE):
-                pygame.draw.circle(surface, (0, 255, 0) if network[-1][n].output==network[-1][n].output_level else (255, 0, 0), neuronPos(DEEP_LAYERS + 1, n), 10)
-        #deep layers
-        else:
-            for n in range(DEEP_LAYER_SIZE):
-                pygame.draw.circle(surface, (0, 255, 0) if network[l][n].output==network[l][n].output_level else (255, 0, 0), neuronPos(l, n), 10)
-
-
+        for n in range(len(network[l])):
+            pygame.draw.circle(surface, (0, 255, 0) if network[l][n].output==network[l][n].output_level else (255, 0, 0), neuronPos(l, n), NEURON_RADIUS)
     pygame.display.update()
 
 
@@ -150,10 +155,7 @@ while(True):
         if e.type == pygame.VIDEORESIZE:
             WIDTH = e.w
             HIGHT = e.h
-            HSPACE = int((WIDTH - MARGIN*2) / (DEEP_LAYERS + 1))
-            FIRST_VSPACE = int((HIGHT - MARGIN*4) / FIRST_LAYER_SIZE+2)
-            DEEP_VSPACE = int((HIGHT - MARGIN*2) / DEEP_LAYER_SIZE)
-            LAST_VSPACE = int((HIGHT - MARGIN*2) / LAST_LAYER_SIZE)
+            calcSettings()
             surface = pygame.display.set_mode((WIDTH, HIGHT), pygame.RESIZABLE)
             disp(True)
         if e.type == pygame.KEYDOWN:
@@ -169,5 +171,6 @@ while(True):
             if e.key == pygame.K_n:
                 network = []
                 buildNetwork()
+                disp(True)
     disp()
     clock.tick(FPS)
