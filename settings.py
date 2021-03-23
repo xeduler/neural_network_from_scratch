@@ -14,14 +14,14 @@ def init():
 
     #neural network settings
     FIRST_LAYER_SIZE = 25
-    DEEP_LAYERS = 4
+    DEEP_LAYERS = 2
     DEEP_LAYER_SIZE = 30
     LAST_LAYER_SIZE = 10
 
     #first generation settings
     AXON_MIN = 0
-    AXON_MAX = 4
-    OUTPUT_LEVEL_MIN = -0.25  # actually it's LAYER_SIZE * OUTPUT_LEVEL_MIN
+    AXON_MAX = 10
+    OUTPUT_LEVEL_MIN = 0#-0.25  # actually it's LAYER_SIZE * OUTPUT_LEVEL_MIN
     OUTPUT_LEVEL_MAX = 0.25   # and this is LAYER_SIZE * OUTPUT_LEVEL_MAX
 
     #gui settings

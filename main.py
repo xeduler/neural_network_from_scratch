@@ -55,14 +55,12 @@ def buildNetwork():
                 for i in range(settings.DEEP_LAYER_SIZE):
                     network[-1][-1].input_mask.append(not bool(random.randint(settings.AXON_MIN, settings.AXON_MAX)))
                     network[-1][-1].activation_level = random.randint(1, settings.DEEP_LAYER_SIZE)
-                    network[-1][-1].output_level = random.randint(
-                        int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MIN), int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MAX))
+                    network[-1][-1].output_level = 1
         else:
             #create deep layers
             network.append([])
             for n in range(settings.DEEP_LAYER_SIZE):
                 network[l].append(Neuron())
-                #generate neuron's mask
                 if len(network[l]) == 0:
                     for i in range(settings.FIRST_LAYER_SIZE):
                         network[l][-1].input_mask.append(not bool(random.randint(settings.AXON_MIN, settings.AXON_MAX)))
@@ -108,7 +106,8 @@ def randomCanvas():
 
 
 
-def mutate(network):
+def mutate(network_input):
+    network = copy.deepcopy(network_input)
     for l in range(1, len(network)):
         for n in range(len(network[l])):
             if settings.MUTATE_AXONS:
@@ -116,11 +115,58 @@ def mutate(network):
                     if not bool(random.randint(0, settings.AXON_MUTATION_RATE)):
                         network[l][n].input_mask[i] = not bool(
                             random.randint(settings.AXON_MIN, settings.AXON_MAX))
-            if settings.MUTATE_NEURON_OUTPUT and not bool(random.randint(0, settings.OUTPUT_MUTATION_RATE)):
+            if settings.MUTATE_NEURON_OUTPUT and not bool(random.randint(0, settings.OUTPUT_MUTATION_RATE)) and l < len(network):
                 network[l][n].output_level = random.randint(
                     int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MIN), int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MAX))
             if settings.MUTATE_NEURON_ACTIVATION and not bool(random.randint(0, settings.ACTIVATION_MUTATION_RATE)):
                 network[l][n].activation_level = random.randint(1, settings.DEEP_LAYER_SIZE)
+    return network
+
+
+
+def train():
+    accuracy = []
+    global network, canvas
+    for i in range(settings.GENERATIONS):
+        accuracy.append(0)
+    #for shape in range(10):
+    #    canvas = copy.deepcopy(tests.shapes[shape])
+    #    updateInput()
+    #    updateNetwork()
+    #    for out in range(10):
+    #        if shape == out:
+    #            accuracy[0] += bool(network[-1][out].output)
+    #            accuracy[0] -= not bool(network[-1][out].output)
+    #        else:
+    #            accuracy[0] -= bool(network[-1][out].output)
+    #            #accuracy[0] += not bool(network[-1][out].output)
+    accuracy[0] = -100
+    for g in range(1, settings.GENERATIONS):
+        tmp_net = copy.deepcopy(network)
+        while True:
+            network = copy.deepcopy(tmp_net)
+            network = mutate(network)
+            for shape in range(10):
+                canvas = copy.deepcopy(tests.shapes[shape])
+                updateInput()
+                updateNetwork()
+                gui.disp(network, canvas, True)
+                #time.sleep(.01)
+
+                for out in range(10):
+                    if shape == out:
+                        accuracy[g] += bool(network[-1][out].output)
+                        accuracy[g] -= not bool(network[-1][out].output)
+                    else:
+                        accuracy[g] -= bool(network[-1][out].output)
+                        #accuracy[g] += not bool(network[-1][out].output)
+            print(f"generation: {g}, accuracy: {accuracy[g]}")
+            if accuracy[g] > accuracy[g-1]:
+                break
+            else:
+                accuracy[g] = 0
+    print(accuracy) 
+
 
 
 
@@ -165,9 +211,11 @@ while(True):
                 updateNetwork()
                 gui.disp(network, canvas, True)
             if e.key == pygame.K_m:
-                mutate(network)
+                network = mutate(network)
                 updateNetwork()
                 gui.disp(network, canvas, True)
+            if e.key == pygame.K_t:
+                train()
             if e.key == pygame.K_0:
                 canvas = copy.deepcopy(tests.shapes[0])
                 updateInput()
