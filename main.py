@@ -13,17 +13,11 @@ import gui
 
 
 
-gui.calcSettings()
-
-canvas = [
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0]
-]
-network = []
-
+class Node:
+    def __init__(self):
+        self.output_level = 1
+        self.low_level = 0
+        self.output = 0
 
 
 class Neuron:
@@ -52,7 +46,7 @@ def buildNetwork():
             #create input layer
             network.append([])
             for n in range(settings.FIRST_LAYER_SIZE):
-                network[0].append(Neuron())
+                network[0].append(Node())
         elif l == settings.DEEP_LAYERS + 1:
             #create output layer
             network.append([])
@@ -114,11 +108,41 @@ def randomCanvas():
 
 
 
+def mutate(network):
+    for l in range(1, len(network)):
+        for n in range(len(network[l])):
+            if settings.MUTATE_AXONS:
+                for i in range(len(network[l-1])):
+                    if not bool(random.randint(0, settings.AXON_MUTATION_RATE)):
+                        network[l][n].input_mask[i] = not bool(
+                            random.randint(settings.AXON_MIN, settings.AXON_MAX))
+            if settings.MUTATE_NEURON_OUTPUT and not bool(random.randint(0, settings.OUTPUT_MUTATION_RATE)):
+                network[l][n].output_level = random.randint(
+                    int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MIN), int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MAX))
+            if settings.MUTATE_NEURON_ACTIVATION and not bool(random.randint(0, settings.ACTIVATION_MUTATION_RATE)):
+                network[l][n].activation_level = random.randint(1, settings.DEEP_LAYER_SIZE)
+
+
+
+gui.calcSettings()
+
+
+canvas = [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]
+]
+
+network = []
 
 buildNetwork()
 updateInput()
 updateNetwork()
 gui.disp(network, canvas, True)
+
+
 while(True):
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
@@ -138,6 +162,10 @@ while(True):
                 network = []
                 buildNetwork()
                 updateInput()
+                updateNetwork()
+                gui.disp(network, canvas, True)
+            if e.key == pygame.K_m:
+                mutate(network)
                 updateNetwork()
                 gui.disp(network, canvas, True)
             if e.key == pygame.K_0:
@@ -180,5 +208,8 @@ while(True):
                 canvas = copy.deepcopy(tests.shapes[9])
                 updateInput()
                 updateNetwork()
+
+
+
     gui.disp(network, canvas)
     gui.clock.tick(settings.FPS)
