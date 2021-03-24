@@ -4,6 +4,7 @@ import pygame
 import time
 import random
 import copy
+import json
 
 import settings
 settings.init()
@@ -129,21 +130,19 @@ def train():
     global network, canvas
     for i in range(settings.GENERATIONS):
         accuracy.append(0)
-    #for shape in range(10):
-    #    canvas = copy.deepcopy(tests.shapes[shape])
-    #    updateInput()
-    #    updateNetwork()
-    #    for out in range(10):
-    #        if shape == out:
-    #            accuracy[0] += bool(network[-1][out].output)
-    #            accuracy[0] -= not bool(network[-1][out].output)
-    #        else:
-    #            accuracy[0] -= bool(network[-1][out].output)
-    #            #accuracy[0] += not bool(network[-1][out].output)
     accuracy[0] = -100
     for g in range(1, settings.GENERATIONS):
+        if accuracy[g-1] > 30:
+            break
         tmp_net = copy.deepcopy(network)
         while True:
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    exit()
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_t:
+                    accuracy[g] = 1000
+                    break
+                    
             network = copy.deepcopy(tmp_net)
             network = mutate(network)
             for shape in range(10):
@@ -151,20 +150,25 @@ def train():
                 updateInput()
                 updateNetwork()
                 gui.disp(network, canvas, True)
-                #time.sleep(.01)
+                #time.sleep(1)
 
                 for out in range(10):
                     if shape == out:
-                        accuracy[g] += bool(network[-1][out].output)
-                        accuracy[g] -= not bool(network[-1][out].output)
+                        if network[-1][out].output:
+                            accuracy[g] += 15
+                        else:
+                            accuracy[g] -= 15
                     else:
-                        accuracy[g] -= bool(network[-1][out].output)
-                        #accuracy[g] += not bool(network[-1][out].output)
+                        if not bool(network[-1][out].output):
+                            accuracy[g] += 1
+                        else:
+                            accuracy[g] -= 1
             print(f"generation: {g}, accuracy: {accuracy[g]}")
             if accuracy[g] > accuracy[g-1]:
                 break
             else:
                 accuracy[g] = 0
+
     print(accuracy) 
 
 
@@ -216,6 +220,12 @@ while(True):
                 gui.disp(network, canvas, True)
             if e.key == pygame.K_t:
                 train()
+            if e.key == pygame.K_s:
+                with open("save.json", "w") as file:
+                    json.dump(network, file)
+            if e.key == pygame.K_l:
+                with open("save.json") as file:
+                    network = json.load(file)
             if e.key == pygame.K_0:
                 canvas = copy.deepcopy(tests.shapes[0])
                 updateInput()

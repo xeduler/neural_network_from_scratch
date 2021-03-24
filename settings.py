@@ -14,7 +14,7 @@ def init():
 
     #neural network settings
     FIRST_LAYER_SIZE = 25
-    DEEP_LAYERS = 2
+    DEEP_LAYERS = 4
     DEEP_LAYER_SIZE = 30
     LAST_LAYER_SIZE = 10
 
@@ -30,13 +30,13 @@ def init():
 
     #mutation settings
     MUTATE_AXONS = True
-    AXON_MUTATION_RATE = 30
+    AXON_MUTATION_RATE = 10
 
     MUTATE_NEURON_OUTPUT = True
-    OUTPUT_MUTATION_RATE = 30
+    OUTPUT_MUTATION_RATE = 10
 
     MUTATE_NEURON_ACTIVATION = True
-    ACTIVATION_MUTATION_RATE = 30
+    ACTIVATION_MUTATION_RATE = 10
 
     #generation settings
     GENERATION_SIZE = 10
