@@ -54,9 +54,9 @@ def buildNetwork():
             for n in range(settings.LAST_LAYER_SIZE):
                 network[-1].append(Neuron())
                 for i in range(settings.DEEP_LAYER_SIZE):
-                    network[-1][-1].input_mask.append(not bool(random.randint(settings.AXON_MIN, settings.AXON_MAX)))
-                    network[-1][-1].activation_level = random.randint(1, settings.DEEP_LAYER_SIZE)
-                    network[-1][-1].output_level = 1
+                    network[-1][-1].input_mask.append(0)#(not bool(random.randint(settings.AXON_MIN, settings.AXON_MAX)))
+                    #network[-1][-1].activation_level = random.randint(1, settings.DEEP_LAYER_SIZE)
+                    #network[-1][-1].output_level = 1
         else:
             #create deep layers
             network.append([])
@@ -114,8 +114,7 @@ def mutate(network_input):
             if settings.MUTATE_AXONS:
                 for i in range(len(network[l-1])):
                     if not bool(random.randint(0, settings.AXON_MUTATION_RATE)):
-                        network[l][n].input_mask[i] = not bool(
-                            random.randint(settings.AXON_MIN, settings.AXON_MAX))
+                        network[l][n].input_mask[i] = random.randint(settings.AXON_MIN, settings.AXON_MAX)
             if settings.MUTATE_NEURON_OUTPUT and not bool(random.randint(0, settings.OUTPUT_MUTATION_RATE)) and l < len(network):
                 network[l][n].output_level = random.randint(
                     int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MIN), int(settings.DEEP_LAYER_SIZE * settings.OUTPUT_LEVEL_MAX))
@@ -126,51 +125,60 @@ def mutate(network_input):
 
 
 def train():
-    accuracy = []
+    rivals = []
     global network, canvas
-    for i in range(settings.GENERATIONS):
-        accuracy.append(0)
-    accuracy[0] = -100
+    for i in range(settings.GENERATION_SIZE):
+        rivals.append([copy.deepcopy(network), 0])
+
+
     for g in range(1, settings.GENERATIONS):
-        if accuracy[g-1] > 30:
-            break
-        tmp_net = copy.deepcopy(network)
-        while True:
-            for e in pygame.event.get():
-                if e.type == pygame.QUIT:
-                    exit()
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_t:
-                    accuracy[g] = 1000
+        #print best accuracy
+        tst = rivals[0][1]
+        for test in rivals:
+            if test[1] > tst:
+                tst = test[1]
+        print(f"generation: {g}, best accuracy: {tst}")
+        ###################
+        random.shuffle(rivals)
+        tmp_rivals = []
+        for selection in range(settings.SELECTION_SIZE):
+            best_acc = 0
+            for best in range(len(rivals)):
+                if rivals[best][1] > rivals[best_acc][1]:
+                    best_acc = best
+            tmp_rivals.append(rivals.pop(best_acc))
+            tmp_rivals[-1][1] = 0
+        while len(tmp_rivals) < settings.GENERATION_SIZE:
+            for selection in range(settings.SELECTION_SIZE):
+                if len(tmp_rivals) < settings.GENERATION_SIZE:
+                    tmp_rivals.append([mutate(tmp_rivals[selection][0]), 0])
+                else:
                     break
-                    
-            network = copy.deepcopy(tmp_net)
-            network = mutate(network)
+        rivals = copy.deepcopy(tmp_rivals)
+
+
+        for rival in rivals:
+            network = copy.deepcopy(rival[0])
             for shape in range(10):
                 canvas = copy.deepcopy(tests.shapes[shape])
                 updateInput()
                 updateNetwork()
-                gui.disp(network, canvas, True)
-                #time.sleep(1)
+                #gui.disp(network, canvas, True)
 
                 for out in range(10):
                     if shape == out:
                         if network[-1][out].output:
-                            accuracy[g] += 15
+                            rival[1] += 10  # activation on right output node
                         else:
-                            accuracy[g] -= 15
+                            rival[1] -= 1  # no activation on right output node
                     else:
                         if not bool(network[-1][out].output):
-                            accuracy[g] += 1
+                            rival[1] += 1  # no activation on wrong output node
                         else:
-                            accuracy[g] -= 1
-            print(f"generation: {g}, accuracy: {accuracy[g]}")
-            if accuracy[g] > accuracy[g-1]:
-                break
-            else:
-                accuracy[g] = 0
-
-    print(accuracy) 
-
+                            rival[1] -= 3  # activation on wrong output node
+    network = copy.deepcopy(rivals[0][0])
+    gui.disp(network, canvas, True)
+            
 
 
 
@@ -191,6 +199,7 @@ buildNetwork()
 updateInput()
 updateNetwork()
 gui.disp(network, canvas, True)
+
 
 
 while(True):
