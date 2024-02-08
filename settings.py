@@ -14,15 +14,15 @@ def init():
 
     #neural network settings
     FIRST_LAYER_SIZE = 25
-    DEEP_LAYERS = 4
-    DEEP_LAYER_SIZE = 30
+    DEEP_LAYERS = 2
+    DEEP_LAYER_SIZE = 26
     LAST_LAYER_SIZE = 10
 
     #first generation settings
-    AXON_MIN = 0
+    AXON_MIN = -10
     AXON_MAX = 10
     OUTPUT_LEVEL_MIN = 0#-0.25  # actually it's LAYER_SIZE * OUTPUT_LEVEL_MIN
-    OUTPUT_LEVEL_MAX = 0.25   # and this is LAYER_SIZE * OUTPUT_LEVEL_MAX
+    OUTPUT_LEVEL_MAX = 0.1   # and this is LAYER_SIZE * OUTPUT_LEVEL_MAX
 
     #gui settings
     NEURON_RADIUS = 10
@@ -30,16 +30,16 @@ def init():
 
     #mutation settings
     MUTATE_AXONS = True
-    AXON_MUTATION_RATE = 10
+    AXON_MUTATION_RATE = 3
 
     MUTATE_NEURON_OUTPUT = True
-    OUTPUT_MUTATION_RATE = 10
+    OUTPUT_MUTATION_RATE = 3
 
     MUTATE_NEURON_ACTIVATION = True
-    ACTIVATION_MUTATION_RATE = 10
+    ACTIVATION_MUTATION_RATE = 3
 
     #generation settings
-    GENERATION_SIZE = 10
-    GENERATIONS = 20
-    SELECTION_SIZE = 2
+    GENERATION_SIZE = 100
+    GENERATIONS = 100
+    SELECTION_SIZE = 10
 
